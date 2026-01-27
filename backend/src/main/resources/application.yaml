@@ -20,3 +20,9 @@ spring:
           batch_size: 50
         order_updates: true
         order_inserts: true
+server:
+  servlet:
+    session:
+      cookie:
+        same-site: None
+        secure: true
