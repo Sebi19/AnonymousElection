@@ -35,8 +35,6 @@ export default function App() {
         navigate('/login');
     };
 
-    const isAdmin = user?.role === 'ROLE_ADMIN';
-
     return (
         <AppShell header={{ height: 60 }} padding="0">
             <AppShell.Header>
