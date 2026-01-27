@@ -38,12 +38,13 @@ export function LoginForm() {
 
             // 2. Perform the Login Request
             // We use standard fetch here because our generated client might enforce JSON
-            const loginResponse = await fetch('/api/login', {
+            const loginResponse = await client.instance.request({
+                url: '/api/login',
                 method: 'POST',
-                body: formData, // No headers needed, fetch handles form-data
+                data: formData
             });
 
-            if (!loginResponse.ok) {
+            if (!(loginResponse.status === 200)) {
                 // FIX: Create an error that looks like an Axios error
                 const error: any = new Error('Unbekannter Fehler');
                 error.response = {
@@ -82,13 +83,13 @@ export function LoginForm() {
                     <TextInput
                         required
                         label="Benutzername"
-                        placeholder="admin"
+                        placeholder="Benutzername..."
                         {...form.getInputProps('username')}
                     />
                     <PasswordInput
                         required
                         label="Passwort"
-                        placeholder="secret"
+                        placeholder="Passwort..."
                         {...form.getInputProps('password')}
                     />
                 </Stack>

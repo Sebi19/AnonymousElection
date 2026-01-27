@@ -42,7 +42,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const logout = async () => {
         try {
-            await fetch('/api/logout', { method: 'POST' });
+            await client.instance.request({
+                url: 'api/logout',
+                method: 'POST'
+            })
         } catch (e) { /* ignore */ }
 
         setIsAuthenticated(false);
