@@ -22,8 +22,10 @@ import { ElectionResults } from "./ElectionResults.tsx";
 import {useAuth} from "../auth/AuthContext.tsx";
 import {openConfirmModal} from "@mantine/modals";
 import {notifications} from "@mantine/notifications";
+import {useDocumentTitle} from "@mantine/hooks";
 
 export function ElectionDetailPage() {
+    useDocumentTitle('Wahl | Kapitänswahl')
     const { id } = useParams();
     const { user } = useAuth();
     const navigate = useNavigate();

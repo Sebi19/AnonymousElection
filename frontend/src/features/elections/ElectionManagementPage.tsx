@@ -6,8 +6,10 @@ import { openConfirmModal } from '@mantine/modals';
 import { useAuth } from '../auth/AuthContext';
 import { client } from '../../api';
 import { type ElectionDto } from '../../api/generated';
+import {useDocumentTitle} from "@mantine/hooks";
 
 export function ElectionManagementPage() {
+    useDocumentTitle('Wahlen | Kapitänswahl')
     const navigate = useNavigate();
     const {user} = useAuth();
     const [elections, setElections] = useState<ElectionDto[]>([]);

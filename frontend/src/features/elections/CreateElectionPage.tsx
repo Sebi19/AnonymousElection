@@ -15,8 +15,10 @@ import { notifications } from '@mantine/notifications';
 import { client } from '../../api';
 import {type CreateElectionRequestDto, type UserDto} from '../../api/generated';
 import {UserSelectionList} from "./UserSelectionList.tsx";
+import {useDocumentTitle} from "@mantine/hooks";
 
 export function CreateElectionPage() {
+    useDocumentTitle('Wahl erstellen | Kapitänswahl')
     const navigate = useNavigate();
     const [users, setUsers] = useState<UserDto[]>([]);
     const [loading, setLoading] = useState(true);

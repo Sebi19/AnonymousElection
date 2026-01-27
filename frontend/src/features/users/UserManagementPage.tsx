@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {Title, Table, Group, Button, ActionIcon, Text, Badge, Paper, LoadingOverlay, Tooltip} from '@mantine/core';
 import {IconKey, IconPencil, IconPlus, IconTrash, IconUser} from '@tabler/icons-react';
-import { useDisclosure } from '@mantine/hooks';
+import {useDisclosure, useDocumentTitle} from '@mantine/hooks';
 import { client } from '../../api';
 import { type UserDto } from '../../api/generated';
 import { AddUserModal } from './AddUserModal';
@@ -11,6 +11,7 @@ import {EditUserModal} from "./EditUserModal.tsx";
 import {useAuth} from "../auth/AuthContext.tsx";
 
 export function UserManagementPage() {
+    useDocumentTitle('Benutzer | Kapitänswahl')
     const {user} = useAuth();
     const [users, setUsers] = useState<UserDto[]>([]);
     const [loading, setLoading] = useState(true);
