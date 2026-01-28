@@ -54,7 +54,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 // 2. Allow Swagger UI and API Docs publicly
-                .requestMatchers(
+                .requestMatchers("/", "/index.html", "/assets/**",
                     "/v3/api-docs/**",
                     "/swagger-ui/**",
                     "/swagger-ui.html"
