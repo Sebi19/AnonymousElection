@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -53,15 +54,22 @@ public class SecurityConfig {
             // 1. Disable CSRF for easier testing (optional, but often needed for API dev)
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                // 2. Allow Swagger UI and API Docs publicly
-                .requestMatchers("/", "/index.html", "/assets/**",
-                    "/v3/api-docs/**",
-                    "/swagger-ui/**",
-                    "/swagger-ui.html"
-                ).permitAll()
+                // 1. PUBLIC API ENDPOINTS
+                // Allow login/register requests to pass
+                .requestMatchers(HttpMethod.POST, "/login").permitAll()
+                .requestMatchers("/api/auth/**").permitAll()
 
-                // 3. Keep your other endpoints secured
-                .anyRequest().authenticated()
+                // 2. PROTECTED API ENDPOINTS
+                // "Everything starting with /api/ MUST be authenticated"
+                // This is your real security layer.
+                .requestMatchers("/api/**").authenticated()
+
+                // 3. FRONTEND ROUTES (The Fix)
+                // "Allow everything else."
+                // This lets /elections, /users, /style.css pass through.
+                // If the path doesn't exist, the SpaRedirectController will catch the 404
+                // and serve index.html.
+                .anyRequest().permitAll()
             )
             .formLogin(form -> form
                 .loginProcessingUrl("/api/login") // 1. The URL we will POST to from React
