@@ -161,7 +161,7 @@ export function ElectionDetailPage() {
 
                 <Paper p="md" radius="md" withBorder>
                     <Group justify="space-between" mb="md">
-                        <Text fw={700}>Teilnahme</Text>
+                        <Text fw={700}>Teilnahmen</Text>
                         <Badge variant="light" color="blue">
                             {totalVoted} / {totalEligible}
                         </Badge>

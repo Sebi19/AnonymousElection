@@ -13,7 +13,7 @@ import {
     Drawer, Stack, Burger, Divider
 } from '@mantine/core';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { IconLogin, IconSun, IconMoon, IconLogout, IconChevronDown,  IconUsers, IconNotes } from '@tabler/icons-react';
+import { IconLogin, IconSun, IconMoon, IconLogout, IconChevronDown, IconUser, IconUsers, IconNotes } from '@tabler/icons-react';
 import { LoginPage } from "./features/auth/LoginPage.tsx";
 import { UserManagementPage } from './features/users/UserManagementPage';
 import { useAuth } from './features/auth/AuthContext';
@@ -120,6 +120,15 @@ export default function App() {
                                 </Menu.Target>
 
                                 <Menu.Dropdown>
+                                    <Menu.Item
+                                        hiddenFrom={"sm"}
+                                        leftSection={<IconUser size={14} />}
+                                        style={{ opacity: 1, cursor: 'default', color: 'var(--mantine-color-text)' }}
+                                        // We use 'component="div"' so it doesn't behave like a button
+                                        component="div"
+                                    >
+                                        {getDisplayName()}
+                                    </Menu.Item>
                                     <Menu.Label>Account</Menu.Label>
                                     <Menu.Divider />
                                     <Menu.Item
