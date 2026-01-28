@@ -1,2 +1,2 @@
 cors:
-  allowed-origins: "https://election-production-3afa.up.railway.app"
+  allowed-origins: "https://election-production-3afa.up.railway.app, https://anonymouselection-production.up.railway.app"
