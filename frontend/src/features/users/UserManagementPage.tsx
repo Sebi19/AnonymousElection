@@ -1,5 +1,17 @@
 import { useEffect, useState } from 'react';
-import {Title, Table, Group, Button, ActionIcon, Text, Badge, Paper, LoadingOverlay, Tooltip} from '@mantine/core';
+import {
+    Title,
+    Table,
+    Group,
+    Button,
+    ActionIcon,
+    Text,
+    Badge,
+    Paper,
+    LoadingOverlay,
+    Tooltip,
+    Stack, Box, Card
+} from '@mantine/core';
 import {IconKey, IconPencil, IconPlus, IconTrash, IconUser} from '@tabler/icons-react';
 import {useDisclosure, useDocumentTitle} from '@mantine/hooks';
 import { client } from '../../api';
@@ -44,6 +56,13 @@ export function UserManagementPage() {
             default:
                 return role;
         }
+    }
+
+    const getDisplayName = (user: UserDto) => {
+        if (user.firstName && user.lastName) {
+            return `${user.firstName} ${user.lastName}`;
+        }
+        return user.username || 'User';
     }
 
     // 1. Fetch Users on Load
@@ -98,7 +117,7 @@ export function UserManagementPage() {
     };
 
     // 3. Render the Rows
-    const rows = users.map((user) => (
+    const desktopRows = users.map((user) => (
         <Table.Tr key={user.id}>
             <Table.Td>
                 <Group gap="sm">
@@ -154,6 +173,64 @@ export function UserManagementPage() {
         </Table.Tr>
     ));
 
+
+    // 2. MOBILE VIEW (The Card Stack) - New Variable
+    const mobileCards = users.map((user) => (
+        <Card key={user.id} withBorder shadow="sm" radius="md" padding="md">
+            <Group justify="space-between" mb="xs">
+                <Text fw={700} size="lg">{getDisplayName(user)}</Text>
+                <Badge
+                    color={user.role === 'ROLE_ADMIN' ? 'red' : 'blue'}
+                    variant="light"
+                >
+                    {translateRole(user.role!)}
+                </Badge>
+            </Group>
+
+            {/* Body: Full Name */}
+            {user.firstName && user.lastName && (
+                <Text c="dimmed" size="sm" mb="md">
+                    {user.username}
+                </Text>
+            )}
+
+            {/* Footer: Large Action Buttons */}
+            {isAdmin && (
+                <Group grow>
+                    <Tooltip label="Benutzer bearbeiten">
+                        <Button
+                            variant="light"
+                            size="sm"
+                            onClick={() => handleEditClick(user)}
+                        >
+                            <IconPencil size={16} />
+                        </Button>
+                    </Tooltip>
+                    <Tooltip label="Passwort zurücksetzen">
+                        <Button
+                            variant="light"
+                            color="orange"
+                            size="sm"
+                            onClick={() => handleResetClick(user)}
+                        >
+                            <IconKey size={16} />
+                        </Button>
+                    </Tooltip>
+                    <Tooltip label="Benutzer löschen">
+                        <Button
+                            variant="light"
+                            color="red"
+                            size="sm"
+                            onClick={() => openDeleteModal(user)}
+                        >
+                            <IconTrash size={16} />
+                        </Button>
+                    </Tooltip>
+                </Group>
+            )}
+        </Card>
+    ));
+
     return (
         <Paper p="md" shadow="sm" radius="md" pos="relative">
             <LoadingOverlay visible={loading} overlayProps={{ radius: "sm", blur: 2 }} />
@@ -167,19 +244,30 @@ export function UserManagementPage() {
                 )}
             </Group>
 
-            <Table highlightOnHover verticalSpacing="sm">
-                <Table.Thead>
-                    <Table.Tr>
-                        <Table.Th>Benutzername</Table.Th>
-                        <Table.Th>Name</Table.Th>
-                        <Table.Th>Rolle</Table.Th>
-                        {isAdmin && (
-                            <Table.Th style={{ textAlign: 'right' }}>Aktionen</Table.Th>
-                        )}
-                    </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>{rows}</Table.Tbody>
-            </Table>
+            {/* LOADING STATE */}
+            <LoadingOverlay visible={loading} />
+            {/* --- DESKTOP TABLE (Hidden on Mobile) --- */}
+            <Box visibleFrom="sm">
+                <Table highlightOnHover verticalSpacing="sm">
+                    <Table.Thead>
+                        <Table.Tr>
+                            <Table.Th>Benutzername</Table.Th>
+                            <Table.Th>Name</Table.Th>
+                            <Table.Th>Rolle</Table.Th>
+                            {isAdmin && (
+                                <Table.Th style={{ textAlign: 'right' }}>Aktionen</Table.Th>
+                            )}
+                        </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>{desktopRows}</Table.Tbody>
+                </Table>
+            </Box>
+
+            {/* --- MOBILE STACK (Hidden on Desktop) --- */}
+            <Stack hiddenFrom="sm" gap="md">
+                {mobileCards}
+                {users.length === 0 && !loading && <Text ta="center" c="dimmed">Keine Benutzer gefunden</Text>}
+            </Stack>
 
             {/* The Modal Component */}
             <AddUserModal

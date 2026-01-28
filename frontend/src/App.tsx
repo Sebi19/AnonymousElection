@@ -1,4 +1,17 @@
-import { AppShell, Group, Title, Button, ActionIcon, useMantineColorScheme, useComputedColorScheme, Menu, Avatar, Text, rem } from '@mantine/core';
+import {
+    AppShell,
+    Group,
+    Title,
+    Button,
+    ActionIcon,
+    useMantineColorScheme,
+    useComputedColorScheme,
+    Menu,
+    Avatar,
+    Text,
+    rem,
+    Drawer, Stack, Burger, Divider
+} from '@mantine/core';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { IconLogin, IconSun, IconMoon, IconLogout, IconChevronDown,  IconUsers, IconNotes } from '@tabler/icons-react';
 import { LoginPage } from "./features/auth/LoginPage.tsx";
@@ -7,15 +20,22 @@ import { useAuth } from './features/auth/AuthContext';
 import {ProtectedRoute} from "./features/auth/ProtectedRoute.tsx";
 import {ElectionManagementPage} from "./features/elections/ElectionManagementPage.tsx";
 import {CreateElectionPage} from "./features/elections/CreateElectionPage.tsx";
-import {ElectionDetailPage} from "./features/elections/ElectionDetailPage.tsx"; // Import the hook
+import {ElectionDetailPage} from "./features/elections/ElectionDetailPage.tsx";
+import {useDisclosure} from "@mantine/hooks"; // Import the hook
 export default function App() {
     const navigate = useNavigate();
+    const [opened, { toggle, close }] = useDisclosure();
     const location = useLocation();
     const { setColorScheme } = useMantineColorScheme();
     const computedColorScheme = useComputedColorScheme('light', { getInitialValueInEffect: true });
 
     // Get auth state
     const { isAuthenticated, user, logout } = useAuth()
+
+    const handleNav = (path: string) => {
+        navigate(path);
+        close();
+    };
 
     const getDisplayName = () => {
         if (user?.firstName && user?.lastName) {
@@ -39,13 +59,25 @@ export default function App() {
         <AppShell header={{ height: 60 }} padding="0">
             <AppShell.Header>
                 <Group h="100%" px="md" justify="space-between">
-                    <Group gap="sm" style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => navigate('/')}>
-                        <Title order={3}>Kapitänswahl</Title>
+
+                    {/* LEFT SIDE: Burger (Mobile) & Title */}
+                    <Group>
+                        {/* Show Burger only if logged in (or always if you have public pages) */}
+                        {isAuthenticated && (
+                            <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
+                        )}
+
+                        <Group gap="sm" style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => navigate('/')}>
+                            <Title order={3}>Kapitänswahl</Title>
+                        </Group>
                     </Group>
 
+                    {/* RIGHT SIDE: Navigation & Actions */}
                     <Group gap="xs">
+
+                        {/* 1. DESKTOP NAV (Hidden on Mobile) */}
                         {isAuthenticated && (
-                            <>
+                            <Group visibleFrom="sm" gap="xs">
                                 <Button
                                     variant={isActive('/users') ? 'light' : 'subtle'}
                                     leftSection={<IconUsers size={18} />}
@@ -60,10 +92,10 @@ export default function App() {
                                 >
                                     Wahlen
                                 </Button>
-                            </>
+                            </Group>
                         )}
 
-                        {/* CONDITIONAL RENDERING: Login Button vs User Menu */}
+                        {/* 2. USER MENU / LOGIN */}
                         {!isAuthenticated ? (
                             <Button
                                 variant={isActive('/login') ? 'light' : 'subtle'}
@@ -75,10 +107,12 @@ export default function App() {
                         ) : (
                             <Menu shadow="md" width={200} position="bottom-end">
                                 <Menu.Target>
-                                    <Button variant="subtle" rightSection={<IconChevronDown size={14} />}>
+                                    {/* On mobile, we reduce padding and hide the text name */}
+                                    <Button variant="subtle" px={5} rightSection={<IconChevronDown size={14} />}>
                                         <Group gap={7}>
-                                            <Avatar src={null} alt={user?.username || 'User'} radius="xl" size={24} color="blue" />
-                                            <Text fw={500} size="sm" lh={1} mr={3}>
+                                            <Avatar src={null} alt={user?.username} radius="xl" size={24} color="blue" />
+                                            {/* Hide Name on Mobile (visibleFrom="sm") */}
+                                            <Text fw={500} size="sm" lh={1} mr={3} visibleFrom="sm">
                                                 {getDisplayName()}
                                             </Text>
                                         </Group>
@@ -87,9 +121,7 @@ export default function App() {
 
                                 <Menu.Dropdown>
                                     <Menu.Label>Account</Menu.Label>
-
                                     <Menu.Divider />
-
                                     <Menu.Item
                                         color="red"
                                         leftSection={<IconLogout style={{ width: rem(14), height: rem(14) }} />}
@@ -101,13 +133,66 @@ export default function App() {
                             </Menu>
                         )}
 
-                        {/* Theme Toggle */}
-                        <ActionIcon onClick={toggleColorScheme} variant="default" size="lg" ml={10}>
+                        {/* 3. THEME TOGGLE */}
+                        <ActionIcon onClick={toggleColorScheme} variant="default" size="lg" ml={5}>
                             {computedColorScheme === 'dark' ? <IconSun size={18} /> : <IconMoon size={18} />}
                         </ActionIcon>
                     </Group>
                 </Group>
             </AppShell.Header>
+
+            {/* MOBILE DRAWER (Only visible when Burger is clicked) */}
+            <Drawer opened={opened} onClose={close} title="Menu" padding="md" size="75%">
+                <Stack gap="md">
+                    {isAuthenticated && (
+                        <>
+                            <Button
+                                variant={isActive('/users') ? 'light' : 'subtle'}
+                                leftSection={<IconUsers size={18} />}
+                                fullWidth
+                                justify="flex-start"
+                                onClick={() => handleNav('/users')}
+                            >
+                                Benutzer
+                            </Button>
+                            <Button
+                                variant={isActive('/elections') ? 'light' : 'subtle'}
+                                leftSection={<IconNotes size={18} />}
+                                fullWidth
+                                justify="flex-start"
+                                onClick={() => handleNav('/elections')}
+                            >
+                                Wahlen
+                            </Button>
+
+                            <Divider my="sm" />
+
+                            <Button
+                                color="red"
+                                variant="subtle"
+                                leftSection={<IconLogout size={18} />}
+                                fullWidth
+                                justify="flex-start"
+                                onClick={handleLogout}
+                            >
+                                Logout
+                            </Button>
+                        </>
+                    )}
+
+                    {!isAuthenticated && (
+                        <Button
+                            variant="subtle"
+                            leftSection={<IconLogin size={18} />}
+                            fullWidth
+                            justify="flex-start"
+                            onClick={() => handleNav('/login')}
+                        >
+                            Login
+                        </Button>
+                    )}
+                </Stack>
+            </Drawer>
 
             <AppShell.Main h="calc(100vh - 60px)">
                 <Routes>
