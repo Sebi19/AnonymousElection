@@ -123,14 +123,6 @@
 						</exclude>
 					</excludes>
 				</configuration>
-				<executions>
-					<execution>
-						<id>repackage</id>
-						<configuration>
-							<skip>${skip.frontend.build}</skip>
-						</configuration>
-					</execution>
-				</executions>
 			</plugin>
 			<plugin>
 				<groupId>com.github.eirslett</groupId>
