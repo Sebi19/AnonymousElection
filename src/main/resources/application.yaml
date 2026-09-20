@@ -26,3 +26,5 @@ server:
       cookie:
         same-site: None
         secure: true
+whatsapp:
+  verify-token: 12345
