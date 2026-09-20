@@ -58,6 +58,7 @@ public class SecurityConfig {
                 // Allow login/register requests to pass
                 .requestMatchers(HttpMethod.POST, "/login").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/whatsapp/webhook").permitAll()
 
                 // 2. PROTECTED API ENDPOINTS
                 // "Everything starting with /api/ MUST be authenticated"

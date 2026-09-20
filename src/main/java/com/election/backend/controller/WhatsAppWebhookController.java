@@ -3,7 +3,6 @@ package com.election.backend.controller;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -18,7 +17,6 @@ public class WhatsAppWebhookController {
      * Handles the one-time verification handshake from Meta
      */
     @GetMapping
-    @PreAuthorize("permitAll()")
     public ResponseEntity<String> verifyWebhook(
         @RequestParam(name = "hub.mode", required = false) String mode,
         @RequestParam(name = "hub.verify_token", required = false) String token,
@@ -36,7 +34,6 @@ public class WhatsAppWebhookController {
      * Receives incoming messages and status updates
      */
     @PostMapping
-    @PreAuthorize("permitAll()")
     public ResponseEntity<String> receiveEvent(@RequestBody String payload) {
         // Log or parse the incoming JSON payload here
         System.out.println("Received WhatsApp Event: " + payload);
