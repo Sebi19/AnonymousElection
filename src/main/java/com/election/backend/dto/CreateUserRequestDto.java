@@ -14,8 +14,6 @@ public class CreateUserRequestDto {
     @NotNull
     String username;
     @NotNull
-    String password;
-    @NotNull
     String role;
 
     String firstName;

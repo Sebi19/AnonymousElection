@@ -149,8 +149,8 @@ export function UserManagementPage() {
                             </ActionIcon>
                         </Tooltip>
 
-                        {/* RESET PASSWORD BUTTON */}
-                        <Tooltip label="Passwort zurücksetzen">
+                        {/* RESET PASSWORD LINK BUTTON */}
+                        <Tooltip label="Passwort-Reset-Link erstellen">
                             <ActionIcon variant="subtle" color="orange" onClick={() => handleResetClick(user)} disabled={user.username === 'admin'}>
                                 <IconKey size={16} />
                             </ActionIcon>
@@ -206,7 +206,7 @@ export function UserManagementPage() {
                             <IconPencil size={16} />
                         </Button>
                     </Tooltip>
-                    <Tooltip label="Passwort zurücksetzen">
+                    <Tooltip label="Passwort-Reset-Link erstellen">
                         <Button
                             variant="light"
                             color="orange"
@@ -273,7 +273,13 @@ export function UserManagementPage() {
             <AddUserModal
                 opened={addOpened}
                 close={closeAdd}
-                onUserCreated={(newUser) => setUsers([...users, newUser])}
+                onUserCreated={(newUser) => {
+                    setUsers([...users, newUser]);
+                    // New users have no usable password yet - immediately hand the
+                    // admin a reset link to share so the user can set their own
+                    setSelectedUser(newUser);
+                    openReset();
+                }}
             />
 
             <ResetPasswordModal

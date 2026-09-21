@@ -1,4 +1,4 @@
-import { Modal, Button, TextInput, PasswordInput, Select, Stack, Group } from '@mantine/core';
+import { Modal, Button, TextInput, Select, Stack, Group } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useState } from 'react';
 import { client } from '../../api.ts';
@@ -16,14 +16,12 @@ export function AddUserModal({ opened, close, onUserCreated }: AddUserModalProps
     const form = useForm({
         initialValues: {
             username: '',
-            password: '',
             firstname: '',
             lastname: '',
             role: 'ROLE_USER',
         },
         validate: {
             username: (val: string) => (val.length < 3 ? 'Username too short' : null),
-            password: (val: string) => (val.length < 4 ? 'Password must be at least 4 chars' : null),
         },
     });
 
@@ -32,7 +30,6 @@ export function AddUserModal({ opened, close, onUserCreated }: AddUserModalProps
         try {
             const request: CreateUserRequestDto = {
                 username: values.username,
-                password: values.password,
                 role: values.role,
                 firstName: values.firstname || undefined,
                 lastName: values.lastname || undefined,
@@ -59,13 +56,6 @@ export function AddUserModal({ opened, close, onUserCreated }: AddUserModalProps
                         required
                         data-autofocus
                         {...form.getInputProps('username')}
-                    />
-
-                    <PasswordInput
-                        label="Passwort"
-                        placeholder="Passwort eingeben"
-                        required
-                        {...form.getInputProps('password')}
                     />
 
                     <Group grow>

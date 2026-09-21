@@ -13,8 +13,10 @@ import {
     Drawer, Stack, Burger, Divider
 } from '@mantine/core';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { IconLogin, IconSun, IconMoon, IconLogout, IconChevronDown, IconUser, IconUsers, IconNotes } from '@tabler/icons-react';
+import { IconLogin, IconSun, IconMoon, IconLogout, IconChevronDown, IconUser, IconUsers, IconNotes, IconKey } from '@tabler/icons-react';
 import { LoginPage } from "./features/auth/LoginPage.tsx";
+import { ResetPasswordPage } from "./features/auth/ResetPasswordPage.tsx";
+import { ChangePasswordModal } from "./features/auth/ChangePasswordModal.tsx";
 import { UserManagementPage } from './features/users/UserManagementPage';
 import { useAuth } from './features/auth/AuthContext';
 import {ProtectedRoute} from "./features/auth/ProtectedRoute.tsx";
@@ -25,6 +27,7 @@ import {useDisclosure} from "@mantine/hooks"; // Import the hook
 export default function App() {
     const navigate = useNavigate();
     const [opened, { toggle, close }] = useDisclosure();
+    const [changePasswordOpened, { open: openChangePassword, close: closeChangePassword }] = useDisclosure(false);
     const location = useLocation();
     const { setColorScheme } = useMantineColorScheme();
     const computedColorScheme = useComputedColorScheme('light', { getInitialValueInEffect: true });
@@ -130,6 +133,12 @@ export default function App() {
                                         {getDisplayName()}
                                     </Menu.Item>
                                     <Menu.Label>Account</Menu.Label>
+                                    <Menu.Item
+                                        leftSection={<IconKey style={{ width: rem(14), height: rem(14) }} />}
+                                        onClick={openChangePassword}
+                                    >
+                                        Passwort ändern
+                                    </Menu.Item>
                                     <Menu.Divider />
                                     <Menu.Item
                                         color="red"
@@ -177,6 +186,15 @@ export default function App() {
                             <Divider my="sm" />
 
                             <Button
+                                variant="subtle"
+                                leftSection={<IconKey size={18} />}
+                                fullWidth
+                                justify="flex-start"
+                                onClick={() => { close(); openChangePassword(); }}
+                            >
+                                Passwort ändern
+                            </Button>
+                            <Button
                                 color="red"
                                 variant="subtle"
                                 leftSection={<IconLogout size={18} />}
@@ -203,10 +221,15 @@ export default function App() {
                 </Stack>
             </Drawer>
 
+            {isAuthenticated && (
+                <ChangePasswordModal opened={changePasswordOpened} close={closeChangePassword} />
+            )}
+
             <AppShell.Main h="calc(100vh - 60px)">
                 <Routes>
                     <Route path="/" element={<Navigate to={isAuthenticated ? "/elections" : "/login"} replace />} />
                     <Route path="/login" element={!isAuthenticated ? <LoginPage /> : <Navigate to="/elections" />} />
+                    <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
                     <Route path="/users" element={
                         <ProtectedRoute>
                             <UserManagementPage />

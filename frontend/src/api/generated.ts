@@ -26,16 +26,20 @@ export interface UserDto {
   lastName?: string;
 }
 
-export interface ResetPasswordRequestDto {
+export interface ChangePasswordRequestDto {
+  currentPassword?: string;
   newPassword?: string;
 }
 
 export interface CreateUserRequestDto {
   username: string;
-  password: string;
   role: string;
   firstName?: string;
   lastName?: string;
+}
+
+export interface PasswordResetLinkDto {
+  token?: string;
 }
 
 export interface CreateElectionRequestDto {
@@ -66,12 +70,20 @@ export interface CastVoteRequestDto {
   candidateId?: number;
 }
 
+export interface ResetPasswordRequestDto {
+  newPassword?: string;
+}
+
 export interface ElectionResultDto {
   /** @format int64 */
   candidateId?: number;
   candidateName?: string;
   /** @format int64 */
   count?: number;
+}
+
+export interface ResetTokenInfoDto {
+  username?: string;
 }
 
 import type {
@@ -296,16 +308,15 @@ export class Api<
      * No description
      *
      * @tags user-controller
-     * @name ResetPassword
-     * @request PUT:/api/users/{id}/password
+     * @name ChangeOwnPassword
+     * @request PUT:/api/users/change-password
      */
-    resetPassword: (
-      id: number,
-      data: ResetPasswordRequestDto,
+    changeOwnPassword: (
+      data: ChangePasswordRequestDto,
       params: RequestParams = {},
     ) =>
       this.request<void, any>({
-        path: `/api/users/${id}/password`,
+        path: `/api/users/change-password`,
         method: "PUT",
         body: data,
         type: ContentType.Json,
@@ -383,6 +394,20 @@ export class Api<
     /**
      * No description
      *
+     * @tags user-controller
+     * @name GeneratePasswordResetLink
+     * @request POST:/api/users/{id}/password-reset-link
+     */
+    generatePasswordResetLink: (id: number, params: RequestParams = {}) =>
+      this.request<PasswordResetLinkDto, any>({
+        path: `/api/users/${id}/password-reset-link`,
+        method: "POST",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
      * @tags election-controller
      * @name GetElections
      * @request GET:/api/elections
@@ -444,6 +469,40 @@ export class Api<
       this.request<void, any>({
         path: `/api/elections/${id}/close`,
         method: "POST",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags auth-controller
+     * @name GetResetTokenInfo
+     * @request GET:/api/auth/reset-password/{token}
+     */
+    getResetTokenInfo: (token: string, params: RequestParams = {}) =>
+      this.request<ResetTokenInfoDto, any>({
+        path: `/api/auth/reset-password/${token}`,
+        method: "GET",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags auth-controller
+     * @name ResetPassword
+     * @request POST:/api/auth/reset-password/{token}
+     */
+    resetPassword: (
+      token: string,
+      data: ResetPasswordRequestDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/auth/reset-password/${token}`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
         ...params,
       }),
 

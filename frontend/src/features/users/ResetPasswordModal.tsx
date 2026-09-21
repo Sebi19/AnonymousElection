@@ -1,9 +1,9 @@
-import {Modal, Button, PasswordInput, Stack, Group} from '@mantine/core';
-import { useForm } from '@mantine/form';
+import { useEffect, useState } from 'react';
+import {Modal, Button, TextInput, Stack, Group, Text, Center, Loader, CopyButton, ActionIcon, Tooltip} from '@mantine/core';
+import { IconCheck, IconCopy, IconBrandWhatsapp } from '@tabler/icons-react';
 import { client } from '../../api';
 import { type UserDto } from '../../api/generated';
 import {notifications} from "@mantine/notifications";
-import {useState} from "react";
 
 interface ResetPasswordModalProps {
     user: UserDto | null;
@@ -13,48 +13,78 @@ interface ResetPasswordModalProps {
 
 export function ResetPasswordModal({ user, opened, close }: ResetPasswordModalProps) {
     const [loading, setLoading] = useState(false);
+    const [resetLink, setResetLink] = useState<string | null>(null);
 
-    const form = useForm({
-        initialValues: { newPassword: '' },
-        validate: { newPassword: (val: string) => (val.length < 4 ? 'Too short' : null) },
-    });
+    useEffect(() => {
+        if (!opened || !user?.id) return;
 
-    const handleSubmit = async (values: typeof form.values) => {
-        setLoading(true)
-        if (!user?.id) return;
-        try {
-            await client.api.resetPassword(user.id, values);
-            close();
-            form.reset();
-            notifications.show({
-                color: 'green',
-                title: 'Erfolg',
-                message: `Passwort für ${user.username} aktualsiert.`,
-            });
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setLoading(false);
-        }
-    };
+        setResetLink(null);
+        setLoading(true);
+
+        client.api.generatePasswordResetLink(user.id)
+            .then(res => {
+                setResetLink(`${window.location.origin}/reset-password/${res.data.token}`);
+            })
+            .catch(error => {
+                console.error(error);
+                notifications.show({ color: 'red', title: 'Fehler', message: 'Link konnte nicht erstellt werden' });
+            })
+            .finally(() => setLoading(false));
+    }, [opened, user?.id]);
+
+    const message = resetLink
+        ? `Username: ${user?.username}\nPasswort zurücksetzen:\n${resetLink}`
+        : '';
 
     return (
-        <Modal opened={opened} onClose={close} title={`Passwort aktualisieren: ${user?.username}`} centered>
-            <form onSubmit={form.onSubmit(handleSubmit)}>
-                <Stack>
-                    <PasswordInput
-                        label="Neues Passwort"
-                        placeholder="Passwort eingeben"
-                        data-autofocus
-                        required
-                        {...form.getInputProps('newPassword')}
+        <Modal opened={opened} onClose={close} title={`Passwort-Reset-Link: ${user?.username}`} centered>
+            <Stack>
+                <Text size="sm" c="dimmed">
+                    Teile diesen Link mit {user?.username}. Er ist 24 Stunden gültig und kann nur einmal verwendet werden,
+                    um ein neues Passwort zu setzen.
+                </Text>
+
+                {loading ? (
+                    <Center py="md"><Loader size="sm" /></Center>
+                ) : resetLink && (
+                    <TextInput
+                        readOnly
+                        value={resetLink}
+                        onClick={(e) => e.currentTarget.select()}
+                        rightSection={
+                            <CopyButton value={resetLink} timeout={2000}>
+                                {({ copied, copy }) => (
+                                    <Tooltip label={copied ? 'Kopiert!' : 'Kopieren'}>
+                                        <ActionIcon color={copied ? 'teal' : 'gray'} onClick={copy}>
+                                            {copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
+                                        </ActionIcon>
+                                    </Tooltip>
+                                )}
+                            </CopyButton>
+                        }
                     />
-                    <Group justify="flex-end" mt="md">
-                        <Button variant="default" onClick={close}>Abbrechen</Button>
-                        <Button type="submit" color="red" loading={loading}>Passwort aktualisieren</Button>
-                    </Group>
-                </Stack>
-            </form>
+                )}
+
+                {resetLink && (
+                    <CopyButton value={message} timeout={2000}>
+                        {({ copied, copy }) => (
+                            <Button
+                                fullWidth
+                                color="teal"
+                                variant={copied ? 'filled' : 'light'}
+                                leftSection={copied ? <IconCheck size={16} /> : <IconBrandWhatsapp size={16} />}
+                                onClick={copy}
+                            >
+                                {copied ? 'Nachricht kopiert!' : 'Nachricht kopieren'}
+                            </Button>
+                        )}
+                    </CopyButton>
+                )}
+
+                <Group justify="flex-end" mt="md">
+                    <Button variant="default" onClick={close}>Fertig</Button>
+                </Group>
+            </Stack>
         </Modal>
     );
 }
