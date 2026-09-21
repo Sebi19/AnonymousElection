@@ -1,33 +1,22 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Paper, Radio, Button, Stack, Text, Alert, Group } from '@mantine/core';
 import { IconInfoCircle } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { client } from '../../api';
-import {type CastVoteRequestDto, type ElectionDto, type UserDto} from '../../api/generated';
+import {type CastVoteRequestDto, type ElectionDto} from '../../api/generated';
 
 interface VoteFormProps {
     election: ElectionDto;
     onVoteSuccess: () => void;
 }
 
-function shuffle<T>(items: T[]): T[] {
-    const result = [...items];
-    for (let i = result.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [result[i], result[j]] = [result[j], result[i]];
-    }
-    return result;
-}
-
 export function VoteForm({ election, onVoteSuccess }: VoteFormProps) {
     const [value, setValue] = useState<string | null>(null); // Candidate ID or "abstain"
     const [submitting, setSubmitting] = useState(false);
 
-    // Shuffle once per election so the ballot order isn't biased towards
-    // whoever happens to come first from the backend; stays stable across
-    // re-renders (e.g. background polling) while voting
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    const shuffledCandidates = useMemo<UserDto[]>(() => shuffle(election.candidates ?? []), [election.id]);
+    const sortedCandidates = [...(election.candidates || [])].sort((a, b) =>
+        (a.firstName || a.username || '').localeCompare(b.firstName || b.username || '')
+    );
 
     const handleSubmit = async () => {
         if (!value) return;
@@ -66,7 +55,7 @@ export function VoteForm({ election, onVoteSuccess }: VoteFormProps) {
                 mt="xl"
             >
                 <Stack mt="xs">
-                    {shuffledCandidates.map(candidate => (
+                    {sortedCandidates.map(candidate => (
                         <Radio
                             key={candidate.id}
                             value={candidate.id!.toString()}

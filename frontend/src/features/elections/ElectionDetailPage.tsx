@@ -103,6 +103,10 @@ export function ElectionDetailPage() {
     const hasVoted = election.userIdsWhoVoted?.includes(user?.id!) || false;
     const isEligible = election.eligibleVoters?.some(voter => voter.id === user?.id);
 
+    const sortedEligibleVoters = [...(election.eligibleVoters || [])].sort((a, b) =>
+        (a.firstName || a.username || '').localeCompare(b.firstName || b.username || '')
+    );
+
     return (
         <Container size="md" py="xl">
             <Button
@@ -181,7 +185,7 @@ export function ElectionDetailPage() {
                             {totalVoted} / {totalEligible}
                         </Badge>
                     </Group>
-                    {election.eligibleVoters?.map(voter => {
+                    {sortedEligibleVoters.map(voter => {
                         const hasVoted = election.userIdsWhoVoted?.includes(voter.id!);
                         return (
                             <Group key={voter.id} justify="space-between" py="xs" style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}>

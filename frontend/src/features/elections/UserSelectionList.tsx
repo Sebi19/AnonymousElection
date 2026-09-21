@@ -48,6 +48,10 @@ export function UserSelectionList({
     const allSelected = users.length > 0 && selectedIds.length === users.length;
     const indeterminate = selectedIds.length > 0 && selectedIds.length < users.length;
 
+    const sortedUsers = [...users].sort((a, b) =>
+        (a.firstName || a.username || '').localeCompare(b.firstName || b.username || '')
+    );
+
     return (
         <Card withBorder padding="md" radius="md">
             <Group justify="space-between" mb="xs">
@@ -68,7 +72,7 @@ export function UserSelectionList({
             <Divider mb="sm" />
 
             <Stack gap="xs">
-                {users.map((user) => {
+                {sortedUsers.map((user) => {
                     const idStr = user.id!.toString();
                     const isSelected = selectedIds.includes(idStr);
 
