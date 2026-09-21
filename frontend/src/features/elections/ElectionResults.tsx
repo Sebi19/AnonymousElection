@@ -22,21 +22,25 @@ export function ElectionResults({ electionId }: { electionId: number }) {
 
     if (loading) return <Center p="xl"><Loader /></Center>;
 
-    // Calculate totals for percentage bars
-    const totalVotes = results.reduce((sum, r) => sum + (r.count || 0), 0);
+    // Abstentions are excluded from the chart and percentage calculations
+    const abstentions = results.find(r => r.candidateName === 'Abstain')?.count || 0;
+    const validResults = results.filter(r => r.candidateName !== 'Abstain');
+
+    // Calculate totals for percentage bars (valid votes only)
+    const totalValidVotes = validResults.reduce((sum, r) => sum + (r.count || 0), 0);
+    const totalVotes = totalValidVotes + abstentions;
+
+    const isAbsoluteMajority = validResults.some(r => (r.count || 0) > totalValidVotes / 2);
 
     // Sort by count (winner on top)
-    const sortedResults = [...results].sort((a, b) => (b.count || 0) - (a.count || 0));
+    const sortedResults = [...validResults].sort((a, b) => (b.count || 0) - (a.count || 0));
 
     const chartData = sortedResults.map((r, index) => {
         // Assign colors dynamically based on rank
-
-        const color = r.candidateName === 'Abstain' ? 'gray.5' : CHART_COLORS[index % CHART_COLORS.length];
-
         return {
-            name: r.candidateName === 'Abstain' ? 'Enthaltungen' : r.candidateName || 'Unknown',
+            name: r.candidateName || 'Unknown',
             value: r.count || 0,
-            color: color
+            color: CHART_COLORS[index % CHART_COLORS.length]
         };
     });
 
@@ -67,17 +71,18 @@ export function ElectionResults({ electionId }: { electionId: number }) {
                     <Stack gap="lg">
                         {sortedResults.map((result, index) => {
                             const count = result.count || 0;
-                            const percentage = totalVotes > 0 ? (count / totalVotes) * 100 : 0;
+                            const percentage = totalValidVotes > 0 ? (count / totalValidVotes) * 100 : 0;
                             const isWinner = count > 0 && count == sortedResults[0].count;
+                            const isTopTwo = count > 0 && count >= sortedResults[1]?.count;
 
                             // Match color logic from chart
-                            const color = result.candidateName === 'Abstain' ? 'gray' : CHART_COLORS[index % CHART_COLORS.length];
+                            const color = CHART_COLORS[index % CHART_COLORS.length];
 
                             return (
                                 <div key={result.candidateName}>
                                     <Group justify="space-between" mb={5}>
                                         <Text fw={isWinner ? 700 : 500}>
-                                            {result.candidateName === 'Abstain' ? 'Enthaltung' : result.candidateName} {isWinner && '👑'}
+                                            {result.candidateName} {isWinner && isAbsoluteMajority && '👑'}{!isAbsoluteMajority && isTopTwo && '⚔️'}
                                         </Text>
                                         <Text fw={700}>{count} Stimme{count > 1 ? 'n' : ''} ({percentage.toFixed(1)}%)</Text>
                                     </Group>
@@ -95,9 +100,19 @@ export function ElectionResults({ electionId }: { electionId: number }) {
             </Grid>
 
 
-            <Text c="dimmed" size="sm" mt="xl" ta="center">
-                Abgegebene Stimmen: {totalVotes}
-            </Text>
+            <Group justify="center" gap="xs" mt="xl">
+                <Text c="dimmed" size="sm">
+                    Abgegebene Stimmen: {totalVotes}
+                </Text>
+                <Text c="dimmed" size="sm">·</Text>
+                <Text c="dimmed" size="sm">
+                    Gültige Stimmen: {totalValidVotes}
+                </Text>
+                <Text c="dimmed" size="sm">·</Text>
+                <Text c="dimmed" size="sm">
+                    Enthaltungen: {abstentions}
+                </Text>
+            </Group>
         </Paper>
     );
 }
