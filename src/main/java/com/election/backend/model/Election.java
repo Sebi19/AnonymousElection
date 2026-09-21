@@ -3,6 +3,7 @@ package com.election.backend.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -18,6 +19,15 @@ public class Election {
 
     @Enumerated(EnumType.STRING)
     private ElectionStatus status; // OPEN, COMPLETED
+
+    // Point in time at which the election is treated as automatically closed
+    private Instant endDate;
+
+    // The election is closed either because it was closed manually, or because
+    // its endDate has passed - the status column itself is never updated for the latter
+    public boolean isEffectivelyClosed() {
+        return status == ElectionStatus.COMPLETED || (endDate != null && endDate.isBefore(Instant.now()));
+    }
 
     // PASSIVE VOTING RIGHT: Who can be voted FOR (Candidates)
     @ManyToMany

@@ -21,6 +21,7 @@ import { useAuth } from '../auth/AuthContext';
 import { client } from '../../api';
 import { type ElectionDto } from '../../api/generated';
 import { useDocumentTitle } from "@mantine/hooks";
+import { ElectionCountdown } from "./ElectionCountdown.tsx";
 
 export function ElectionManagementPage() {
     useDocumentTitle('Wahlen | Kapitänswahl');
@@ -35,15 +36,22 @@ export function ElectionManagementPage() {
         loadElections();
     }, []);
 
-    const loadElections = async () => {
+    // Refresh periodically so elections flip to "completed" automatically
+    // once the backend auto-closes them at their endDate
+    useEffect(() => {
+        const interval = setInterval(() => loadElections(true), 15000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const loadElections = async (silent = false) => {
         try {
-            setLoading(true);
+            if (!silent) setLoading(true);
             const response = await client.api.getElections();
             setElections(response.data);
         } catch (error) {
             console.error("Failed to fetch elections", error);
         } finally {
-            setLoading(false);
+            if (!silent) setLoading(false);
         }
     };
 
@@ -90,9 +98,14 @@ export function ElectionManagementPage() {
             <Table.Td fw={500}>{election.title}</Table.Td>
 
             <Table.Td>
-                <Badge color={election.status === 'OPEN' ? 'green' : 'gray'} variant="light">
-                    {translateStatus(election.status!)}
-                </Badge>
+                <Stack gap={4}>
+                    <Badge color={election.status === 'OPEN' ? 'green' : 'gray'} variant="light">
+                        {translateStatus(election.status!)}
+                    </Badge>
+                    {election.status === 'OPEN' && election.endDate && (
+                        <ElectionCountdown endDate={election.endDate} onExpire={() => loadElections(true)} />
+                    )}
+                </Stack>
             </Table.Td>
 
             <Table.Td>
@@ -174,6 +187,12 @@ export function ElectionManagementPage() {
                     </Text>
                 </Group>
             </Group>
+
+            {election.status === 'OPEN' && election.endDate && (
+                <Group justify="center" mb="sm">
+                    <ElectionCountdown endDate={election.endDate} onExpire={() => loadElections(true)} />
+                </Group>
+            )}
 
             {/* User Participation Status */}
             {hasVoted(election) ? (

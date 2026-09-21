@@ -44,6 +44,8 @@ export interface CreateElectionRequestDto {
   candidateIds?: number[];
   /** @uniqueItems true */
   eligibleVoterIds?: number[];
+  /** @format date-time */
+  endDate?: string;
 }
 
 export interface ElectionDto {
@@ -55,6 +57,8 @@ export interface ElectionDto {
   eligibleVoters?: UserDto[];
   /** @uniqueItems true */
   userIdsWhoVoted?: number[];
+  /** @format date-time */
+  endDate?: string;
 }
 
 export interface CastVoteRequestDto {
@@ -303,6 +307,44 @@ export class Api<
       this.request<void, any>({
         path: `/api/users/${id}/password`,
         method: "PUT",
+        body: data,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags whats-app-webhook-controller
+     * @name VerifyWebhook
+     * @request GET:/api/whatsapp/webhook
+     */
+    verifyWebhook: (
+      query?: {
+        "hub.mode"?: string;
+        "hub.verify_token"?: string;
+        "hub.challenge"?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<string, any>({
+        path: `/api/whatsapp/webhook`,
+        method: "GET",
+        query: query,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags whats-app-webhook-controller
+     * @name ReceiveEvent
+     * @request POST:/api/whatsapp/webhook
+     */
+    receiveEvent: (data: string, params: RequestParams = {}) =>
+      this.request<string, any>({
+        path: `/api/whatsapp/webhook`,
+        method: "POST",
         body: data,
         type: ContentType.Json,
         ...params,

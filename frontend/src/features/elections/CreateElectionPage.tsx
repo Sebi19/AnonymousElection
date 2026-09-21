@@ -11,6 +11,7 @@ import {
     LoadingOverlay,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
+import { DateTimePicker } from '@mantine/dates';
 import { notifications } from '@mantine/notifications';
 import { client } from '../../api';
 import {type CreateElectionRequestDto, type UserDto} from '../../api/generated';
@@ -46,11 +47,17 @@ export function CreateElectionPage() {
             title: '',
             candidateIds: [] as string[],     // Mantine MultiSelect uses strings
             eligibleVoterIds: [] as string[], // We will convert to numbers on submit
+            endDate: null as Date | null,
         },
         validate: {
             title: (val: string) => (val.length < 3 ? 'Titel ist zu kurz' : null),
             candidateIds: (val: string[]) => (val.length < 2 ? 'Wählen Sie zumindest zwei Kandidaten aus' : null),
             eligibleVoterIds: (val: string[]) => (val.length < 1 ? 'Wählen Sie zumindest eine wahlberechtigten Benutzer aus' : null),
+            endDate: (val: Date | null) => {
+                if (!val) return 'Enddatum ist erforderlich';
+                if (val.getTime() <= Date.now()) return 'Enddatum muss in der Zukunft liegen';
+                return null;
+            },
         },
     });
     const handleSubmit = async (values: typeof form.values) => {
@@ -60,6 +67,7 @@ export function CreateElectionPage() {
                 title: values.title,
                 candidateIds: values.candidateIds.map(id => parseInt(id)),
                 eligibleVoterIds: values.eligibleVoterIds.map(id => parseInt(id)),
+                endDate: values.endDate!.toISOString(),
             }
             await client.api.createElection(request);
 
@@ -94,7 +102,20 @@ export function CreateElectionPage() {
                         {...form.getInputProps('title')}
                     />
 
-                    {/* 2. Candidates Selection */}
+                    {/* 2. End Date/Time */}
+                    <DateTimePicker
+                        label="Ende der Wahl"
+                        description="Zu diesem Zeitpunkt wird die Wahl automatisch abgeschlossen"
+                        placeholder="Datum und Uhrzeit wählen"
+                        required
+                        size="md"
+                        minDate={new Date()}
+                        valueFormat="DD.MM.YYYY HH:mm"
+                        clearable
+                        {...form.getInputProps('endDate')}
+                    />
+
+                    {/* 3. Candidates Selection */}
                     <UserSelectionList
                         label="Kandidaten"
                         description="Wähle aus, wer gewählt werden kann"

@@ -19,6 +19,7 @@ import { client } from '../../api';
 import { type ElectionDto } from '../../api/generated';
 import { VoteForm } from './VoteForm';
 import { ElectionResults } from "./ElectionResults.tsx";
+import { ElectionCountdown } from "./ElectionCountdown.tsx";
 import {useAuth} from "../auth/AuthContext.tsx";
 import {openConfirmModal} from "@mantine/modals";
 import {notifications} from "@mantine/notifications";
@@ -47,6 +48,15 @@ export function ElectionDetailPage() {
     useEffect(() => {
         loadElection();
     }, [id]);
+
+    // Poll while the election is still open, so it flips to "completed" and
+    // shows results automatically once the backend auto-closes it at endDate
+    useEffect(() => {
+        if (election?.status !== 'OPEN') return;
+
+        const interval = setInterval(loadElection, 10000);
+        return () => clearInterval(interval);
+    }, [id, election?.status]);
 
     const handleCloseElection = () => {
         openConfirmModal({
@@ -105,15 +115,20 @@ export function ElectionDetailPage() {
             </Button>
             <Stack gap="md">
                 <Group justify="space-between" align="center" mb="lg">
-                    <Group>
-                        <Title order={2}>{election.title}</Title>
-                        <Badge
-                            size="lg"
-                            color={election.status === 'OPEN' ? 'green' : 'gray'}
-                        >
-                            {translateStatus(election.status!)}
-                        </Badge>
-                    </Group>
+                    <Stack gap={4}>
+                        <Group>
+                            <Title order={2}>{election.title}</Title>
+                            <Badge
+                                size="lg"
+                                color={election.status === 'OPEN' ? 'green' : 'gray'}
+                            >
+                                {translateStatus(election.status!)}
+                            </Badge>
+                        </Group>
+                        {isOpen && election.endDate && (
+                            <ElectionCountdown endDate={election.endDate} onExpire={loadElection} />
+                        )}
+                    </Stack>
                     {isAdmin && isOpen && (
                         <Button
                             color="red"

@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 
@@ -48,9 +49,17 @@ public class ElectionController {
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ElectionDto createElection(@RequestBody CreateElectionRequestDto request) {
+        if (request.getEndDate() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "endDate is required");
+        }
+        if (request.getEndDate().isBefore(Instant.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "endDate must be in the future");
+        }
+
         Election election = new Election();
         election.setTitle(request.getTitle());
         election.setStatus(ElectionStatus.OPEN);
+        election.setEndDate(request.getEndDate());
 
         // Fetch Users from DB based on IDs sent
         List<AppUser> candidates = userRepo.findAllById(request.getCandidateIds());
@@ -103,7 +112,7 @@ public class ElectionController {
         Election election = electionRepo.findById(id)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        if (election.getStatus() != ElectionStatus.COMPLETED) {
+        if (!election.isEffectivelyClosed()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Election is still open. Results are hidden.");
         }
 
@@ -122,7 +131,7 @@ public class ElectionController {
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
         // 3. Validation Checks
-        if (election.getStatus() != ElectionStatus.OPEN) {
+        if (election.isEffectivelyClosed()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Election is closed");
         }
         if (!election.getEligibleVoters().contains(currentUser)) {
@@ -167,10 +176,16 @@ public class ElectionController {
     }
 
     private ElectionDto mapToDto(Election election) {
+        // Report as COMPLETED once endDate has passed, even though the status
+        // column itself is only ever updated by an explicit manual close
+        String effectiveStatus = election.isEffectivelyClosed()
+            ? ElectionStatus.COMPLETED.name()
+            : election.getStatus().name();
+
         return ElectionDto.builder()
             .id(election.getId())
             .title(election.getTitle())
-            .status(election.getStatus().name())
+            .status(effectiveStatus)
             .candidates(election.getCandidates().stream()
                 .map(userMapper::toDto)
                 .toList())
@@ -178,6 +193,7 @@ public class ElectionController {
                 .map(userMapper::toDto)
                 .toList())
             .userIdsWhoVoted(election.getUserIdsWhoVoted())
+            .endDate(election.getEndDate())
             .build();
     }
 }

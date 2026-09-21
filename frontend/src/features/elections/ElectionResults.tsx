@@ -72,8 +72,8 @@ export function ElectionResults({ electionId }: { electionId: number }) {
                         {sortedResults.map((result, index) => {
                             const count = result.count || 0;
                             const percentage = totalValidVotes > 0 ? (count / totalValidVotes) * 100 : 0;
-                            const isWinner = count > 0 && count == sortedResults[0].count;
-                            const isTopTwo = count > 0 && count >= sortedResults[1]?.count;
+                            const isWinner = count > 0 && count == sortedResults[0]?.count;
+                            const isTopTwo = count > 0 && count >= (sortedResults[1]?.count || 0);
 
                             // Match color logic from chart
                             const color = CHART_COLORS[index % CHART_COLORS.length];

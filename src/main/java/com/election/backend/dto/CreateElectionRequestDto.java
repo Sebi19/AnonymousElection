@@ -3,6 +3,7 @@ package com.election.backend.dto;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
 import java.util.Set;
 
 @Data
@@ -11,4 +12,5 @@ public class CreateElectionRequestDto {
     private String title;
     private Set<Long> candidateIds;      // Who can be elected
     private Set<Long> eligibleVoterIds;  // Who can vote
+    private Instant endDate;             // When the election automatically closes
 }

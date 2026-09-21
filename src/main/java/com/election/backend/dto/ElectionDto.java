@@ -3,6 +3,7 @@ package com.election.backend.dto;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 
@@ -15,4 +16,5 @@ public class ElectionDto {
     private List<UserDto> candidates; // Options to choose from
     private List<UserDto> eligibleVoters;
     private Set<Long> userIdsWhoVoted;
+    private Instant endDate;
 }
