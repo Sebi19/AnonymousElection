@@ -65,6 +65,15 @@ export function UserManagementPage() {
         return user.username || 'User';
     }
 
+    // Admins pinned to the top, everyone else sorted by first name (falling back to username)
+    const sortedUsers = [...users].sort((a, b) => {
+        const aIsAdmin = a.role === 'ROLE_ADMIN';
+        const bIsAdmin = b.role === 'ROLE_ADMIN';
+        if (aIsAdmin !== bIsAdmin) return aIsAdmin ? -1 : 1;
+
+        return (a.firstName || a.username || '').localeCompare(b.firstName || b.username || '');
+    });
+
     // 1. Fetch Users on Load
     useEffect(() => {
         loadUsers();
@@ -117,7 +126,7 @@ export function UserManagementPage() {
     };
 
     // 3. Render the Rows
-    const desktopRows = users.map((user) => (
+    const desktopRows = sortedUsers.map((user) => (
         <Table.Tr key={user.id}>
             <Table.Td>
                 <Group gap="sm">
@@ -175,7 +184,7 @@ export function UserManagementPage() {
 
 
     // 2. MOBILE VIEW (The Card Stack) - New Variable
-    const mobileCards = users.map((user) => (
+    const mobileCards = sortedUsers.map((user) => (
         <Card key={user.id} withBorder shadow="sm" radius="md" padding="md">
             <Group justify="space-between" mb="xs">
                 <Text fw={700} size="lg">{getDisplayName(user)}</Text>
