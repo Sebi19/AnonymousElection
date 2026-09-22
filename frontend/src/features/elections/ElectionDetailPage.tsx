@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
     Container,
     Title,
@@ -14,7 +14,7 @@ import {
     Tooltip,
     ThemeIcon, Stack
 } from '@mantine/core';
-import {IconArrowLeft, IconCheck, IconLock, IconX} from '@tabler/icons-react';
+import {IconArrowLeft, IconCheck, IconLock, IconLogin, IconX} from '@tabler/icons-react';
 import { client } from '../../api';
 import { type ElectionDto } from '../../api/generated';
 import { VoteForm } from './VoteForm';
@@ -28,8 +28,9 @@ import {useDocumentTitle} from "@mantine/hooks";
 export function ElectionDetailPage() {
     useDocumentTitle('Wahl | Kapitänswahl')
     const { id } = useParams();
-    const { user } = useAuth();
+    const { user, isAuthenticated } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
     const [election, setElection] = useState<ElectionDto | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -149,13 +150,29 @@ export function ElectionDetailPage() {
                     <ElectionResults electionId={election.id!} />
                 )}
 
-                {/* CASE 2: ELECTION IS OPEN AND USER HAS NOT VOTED -> SHOW FORM */}
-                {election.status === 'OPEN' && isEligible && !hasVoted && (
+                {/* CASE 2: ELECTION IS OPEN BUT VISITOR IS NOT LOGGED IN -> PROMPT LOGIN */}
+                {election.status === 'OPEN' && !isAuthenticated && (
+                    <Paper p="xl" withBorder radius="md" ta="center" bg="light-dark(var(--mantine-color-gray-0),var(--mantine-color-dark-6))">
+                        <Title order={3} mb="sm">Melde dich an, um abzustimmen</Title>
+                        <Text c="dimmed" mb="md">
+                            Du kannst dir diese Wahl ansehen, aber um eine Stimme abzugeben musst du angemeldet sein.
+                        </Text>
+                        <Button
+                            leftSection={<IconLogin size={16} />}
+                            onClick={() => navigate('/login', { state: { from: location } })}
+                        >
+                            Zum Login
+                        </Button>
+                    </Paper>
+                )}
+
+                {/* CASE 3: ELECTION IS OPEN AND USER HAS NOT VOTED -> SHOW FORM */}
+                {election.status === 'OPEN' && isAuthenticated && isEligible && !hasVoted && (
                     <VoteForm election={election} onVoteSuccess={loadElection} />
                 )}
 
-                {/* CASE 3: ELECTION IS OPEN BUT USER ALREADY VOTED -> SHOW WAITING SCREEN */}
-                {election.status === 'OPEN' && hasVoted && (
+                {/* CASE 4: ELECTION IS OPEN BUT USER ALREADY VOTED -> SHOW WAITING SCREEN */}
+                {election.status === 'OPEN' && isAuthenticated && hasVoted && (
                     <Paper p="xl" withBorder radius="md" ta="center" bg="light-dark(var(--mantine-color-gray-0),var(--mantine-color-dark-6))">
                         <Center mb="md">
                             <IconCheck size={48} color="green" />
@@ -168,8 +185,8 @@ export function ElectionDetailPage() {
                     </Paper>
                 )}
 
-                {/* CASE 4: ELECTION IS OPEN BUT USER IS NOT ELIGIBLE*/}
-                {election.status === 'OPEN' && !isEligible && (
+                {/* CASE 5: ELECTION IS OPEN BUT USER IS NOT ELIGIBLE*/}
+                {election.status === 'OPEN' && isAuthenticated && !isEligible && (
                     <Paper p="xl" withBorder radius="md" ta="center" bg="light-dark(var(--mantine-color-gray-0),var(--mantine-color-dark-6))">
                         <Title order={3} mb="sm">Du bist nicht stimmberechtigt.</Title>
                         <Text c="dimmed">

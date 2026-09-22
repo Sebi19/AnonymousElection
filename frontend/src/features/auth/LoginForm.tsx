@@ -10,13 +10,14 @@ import {
     Alert,
 } from '@mantine/core';
 import {client} from '../../api.ts'
-import {useNavigate} from "react-router-dom";
+import {useNavigate, useLocation, type Location} from "react-router-dom";
 import {useState} from "react";
 import {useAuth} from "./AuthContext.tsx"
 
 export function LoginForm() {
     const {login} = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
     const [error, setError] = useState<string | null>(null);
 
     const form = useForm({
@@ -60,7 +61,8 @@ export function LoginForm() {
 
             // 4. Update Context
             login(userProfile.data);
-            navigate('/elections');
+            const from = (location.state as { from?: Location })?.from;
+            navigate(from ? `${from.pathname}${from.search}` : '/elections', { replace: true });
 
         } catch (err: any) {
             // Axios error handling

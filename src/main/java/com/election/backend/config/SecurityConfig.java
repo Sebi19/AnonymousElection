@@ -98,6 +98,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/login").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/whatsapp/webhook").permitAll()
+                // Elections (who's running, who's eligible, who has voted, results) are public;
+                // only casting a vote or administering elections requires being logged in
+                .requestMatchers(HttpMethod.GET, "/api/elections", "/api/elections/*", "/api/elections/*/results").permitAll()
 
                 // 2. PROTECTED API ENDPOINTS
                 // "Everything starting with /api/ MUST be authenticated"

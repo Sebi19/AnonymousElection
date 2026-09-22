@@ -65,10 +65,7 @@ export default function App() {
 
                     {/* LEFT SIDE: Burger (Mobile) & Title */}
                     <Group>
-                        {/* Show Burger only if logged in (or always if you have public pages) */}
-                        {isAuthenticated && (
-                            <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
-                        )}
+                        <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
 
                         <Group gap="sm" style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => navigate('/')}>
                             <Title order={3}>Kapitänswahl</Title>
@@ -79,8 +76,8 @@ export default function App() {
                     <Group gap="xs">
 
                         {/* 1. DESKTOP NAV (Hidden on Mobile) */}
-                        {isAuthenticated && (
-                            <Group visibleFrom="sm" gap="xs">
+                        <Group visibleFrom="sm" gap="xs">
+                            {isAuthenticated && (
                                 <Button
                                     variant={isActive('/users') ? 'light' : 'subtle'}
                                     leftSection={<IconUsers size={18} />}
@@ -88,15 +85,15 @@ export default function App() {
                                 >
                                     Benutzer
                                 </Button>
-                                <Button
-                                    variant={isActive('/elections') ? 'light' : 'subtle'}
-                                    leftSection={<IconNotes size={18} />}
-                                    onClick={() => navigate('/elections')}
-                                >
-                                    Wahlen
-                                </Button>
-                            </Group>
-                        )}
+                            )}
+                            <Button
+                                variant={isActive('/elections') ? 'light' : 'subtle'}
+                                leftSection={<IconNotes size={18} />}
+                                onClick={() => navigate('/elections')}
+                            >
+                                Wahlen
+                            </Button>
+                        </Group>
 
                         {/* 2. USER MENU / LOGIN */}
                         {!isAuthenticated ? (
@@ -163,28 +160,30 @@ export default function App() {
             <Drawer opened={opened} onClose={close} title="Menu" padding="md" size="75%">
                 <Stack gap="md">
                     {isAuthenticated && (
+                        <Button
+                            variant={isActive('/users') ? 'light' : 'subtle'}
+                            leftSection={<IconUsers size={18} />}
+                            fullWidth
+                            justify="flex-start"
+                            onClick={() => handleNav('/users')}
+                        >
+                            Benutzer
+                        </Button>
+                    )}
+                    <Button
+                        variant={isActive('/elections') ? 'light' : 'subtle'}
+                        leftSection={<IconNotes size={18} />}
+                        fullWidth
+                        justify="flex-start"
+                        onClick={() => handleNav('/elections')}
+                    >
+                        Wahlen
+                    </Button>
+
+                    <Divider my="sm" />
+
+                    {isAuthenticated ? (
                         <>
-                            <Button
-                                variant={isActive('/users') ? 'light' : 'subtle'}
-                                leftSection={<IconUsers size={18} />}
-                                fullWidth
-                                justify="flex-start"
-                                onClick={() => handleNav('/users')}
-                            >
-                                Benutzer
-                            </Button>
-                            <Button
-                                variant={isActive('/elections') ? 'light' : 'subtle'}
-                                leftSection={<IconNotes size={18} />}
-                                fullWidth
-                                justify="flex-start"
-                                onClick={() => handleNav('/elections')}
-                            >
-                                Wahlen
-                            </Button>
-
-                            <Divider my="sm" />
-
                             <Button
                                 variant="subtle"
                                 leftSection={<IconKey size={18} />}
@@ -205,9 +204,7 @@ export default function App() {
                                 Logout
                             </Button>
                         </>
-                    )}
-
-                    {!isAuthenticated && (
+                    ) : (
                         <Button
                             variant="subtle"
                             leftSection={<IconLogin size={18} />}
@@ -227,7 +224,7 @@ export default function App() {
 
             <AppShell.Main h="calc(100vh - 60px)">
                 <Routes>
-                    <Route path="/" element={<Navigate to={isAuthenticated ? "/elections" : "/login"} replace />} />
+                    <Route path="/" element={<Navigate to="/elections" replace />} />
                     <Route path="/login" element={!isAuthenticated ? <LoginPage /> : <Navigate to="/elections" />} />
                     <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
                     <Route path="/users" element={
@@ -235,21 +232,14 @@ export default function App() {
                             <UserManagementPage />
                         </ProtectedRoute>
                     } />
-                    <Route path="/elections" element={
-                        <ProtectedRoute>
-                            <ElectionManagementPage />
-                        </ProtectedRoute>
-                    } />
+                    {/* Public: anyone can see who's running, who's eligible, who has voted and results */}
+                    <Route path="/elections" element={<ElectionManagementPage />} />
                     <Route path="/elections/create" element={
                         <ProtectedRoute allowedRoles={['ROLE_ADMIN']}>
                             <CreateElectionPage />
                         </ProtectedRoute>
                     } />
-                    <Route path="/elections/:id" element={
-                        <ProtectedRoute>
-                            <ElectionDetailPage />
-                        </ProtectedRoute>
-                    } />
+                    <Route path="/elections/:id" element={<ElectionDetailPage />} />
                 </Routes>
             </AppShell.Main>
         </AppShell>
