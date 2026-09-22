@@ -2,11 +2,14 @@ package com.election.backend.config;
 
 import com.election.backend.repository.UserRepository;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.boot.web.server.servlet.CookieSameSiteSupplier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -17,6 +20,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -31,6 +35,9 @@ public class SecurityConfig {
 
     @Value("${cors.allowed-origins}")
     private String corsAllowedOrigins;
+
+    @Value("${remember-me.key}")
+    private String rememberMeKey;
 
     @Bean
     public UserDetailsService userDetailsService(UserRepository repo) {
@@ -48,7 +55,39 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
+    }
+
+    @Bean
+    public TokenBasedRememberMeServices rememberMeServices(UserDetailsService userDetailsService) {
+        TokenBasedRememberMeServices.RememberMeTokenAlgorithm encodingAlgorithm =
+            TokenBasedRememberMeServices.RememberMeTokenAlgorithm.SHA256;
+
+        TokenBasedRememberMeServices rememberMe = new TokenBasedRememberMeServices(
+            rememberMeKey,
+            userDetailsService,
+            encodingAlgorithm
+        );
+
+        // Set cookie validity to 90 days (in seconds)
+        rememberMe.setTokenValiditySeconds(60 * 60 * 24 * 90);
+        rememberMe.setCookieName("remember-me");
+        rememberMe.setAlwaysRemember(true);
+        // Matches the session cookie's same-site:None/secure:true (see application.yaml) -
+        // required since the frontend and backend live on different domains in production
+        rememberMe.setUseSecureCookie(true);
+
+        return rememberMe;
+    }
+
+    @Bean
+    public CookieSameSiteSupplier rememberMeCookieSameSiteSupplier() {
+        return CookieSameSiteSupplier.ofNone().whenHasName("remember-me");
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http, TokenBasedRememberMeServices rememberMeServices) throws Exception {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             // 1. Disable CSRF for easier testing (optional, but often needed for API dev)
@@ -89,7 +128,9 @@ public class SecurityConfig {
                 .logoutSuccessHandler((request, response, authentication) -> {
                     response.setStatus(HttpServletResponse.SC_OK);
                 })
+                .addLogoutHandler(rememberMeServices) // Clears the remember-me cookie too
             )
+            .rememberMe(rememberMe -> rememberMe.rememberMeServices(rememberMeServices))
             .exceptionHandling(e -> e
                 .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
             );

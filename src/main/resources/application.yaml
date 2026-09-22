@@ -28,3 +28,6 @@ server:
         secure: true
 whatsapp:
   verify-token: 12345
+remember-me:
+  # Secret used to sign remember-me cookies - override with REMEMBER_ME_KEY in production
+  key: ${REMEMBER_ME_KEY:local-dev-remember-me-key}

@@ -498,7 +498,7 @@ export class Api<
       data: ResetPasswordRequestDto,
       params: RequestParams = {},
     ) =>
-      this.request<void, any>({
+      this.request<UserDto, any>({
         path: `/api/auth/reset-password/${token}`,
         method: "POST",
         body: data,

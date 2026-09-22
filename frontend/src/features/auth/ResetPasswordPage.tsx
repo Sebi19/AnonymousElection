@@ -15,6 +15,7 @@ import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { client } from '../../api';
 import { useDocumentTitle } from '@mantine/hooks';
+import { useAuth } from './AuthContext.tsx';
 
 interface ResetPasswordFormValues {
     newPassword: string;
@@ -25,6 +26,7 @@ export function ResetPasswordPage() {
     useDocumentTitle('Passwort zurücksetzen | Kapitänswahl');
     const { token } = useParams();
     const navigate = useNavigate();
+    const { login } = useAuth();
 
     const [checking, setChecking] = useState(true);
     const [username, setUsername] = useState<string | null>(null);
@@ -59,9 +61,10 @@ export function ResetPasswordPage() {
         if (!token) return;
         setSubmitting(true);
         try {
-            await client.api.resetPassword(token, { newPassword: values.newPassword });
-            notifications.show({ color: 'green', title: 'Erfolg', message: 'Passwort wurde gesetzt. Du kannst dich jetzt einloggen.' });
-            navigate('/login');
+            const res = await client.api.resetPassword(token, { newPassword: values.newPassword });
+            login(res.data);
+            notifications.show({ color: 'green', title: 'Erfolg', message: 'Passwort wurde gesetzt. Du bist jetzt angemeldet.' });
+            navigate('/elections');
         } catch {
             notifications.show({ color: 'red', title: 'Fehler', message: 'Passwort konnte nicht gesetzt werden' });
         } finally {

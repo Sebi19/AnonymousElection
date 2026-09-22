@@ -8,16 +8,23 @@ import com.election.backend.model.AppUser;
 import com.election.backend.model.PasswordResetToken;
 import com.election.backend.repository.PasswordResetTokenRepository;
 import com.election.backend.repository.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -31,12 +38,18 @@ public class AuthController {
     private final UserMapper userMapper;
     private final PasswordResetTokenRepository resetTokenRepo;
     private final PasswordEncoder encoder;
+    private final AuthenticationManager authenticationManager;
+    private final TokenBasedRememberMeServices rememberMeServices;
+    private final SecurityContextRepository securityContextRepository = new HttpSessionSecurityContextRepository();
 
-    public AuthController(UserRepository userRepository, UserMapper userMapper, PasswordResetTokenRepository resetTokenRepo, PasswordEncoder encoder) {
+    public AuthController(UserRepository userRepository, UserMapper userMapper, PasswordResetTokenRepository resetTokenRepo,
+                           PasswordEncoder encoder, AuthenticationManager authenticationManager, TokenBasedRememberMeServices rememberMeServices) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
         this.resetTokenRepo = resetTokenRepo;
         this.encoder = encoder;
+        this.authenticationManager = authenticationManager;
+        this.rememberMeServices = rememberMeServices;
     }
 
     // This endpoint works for ANY logged-in user (Admin OR User)
@@ -63,9 +76,10 @@ public class AuthController {
     }
 
     // Consumes a one-time password reset link: the user sets their own new password
+    // and is immediately logged in, so they don't have to type it again right away
     @PostMapping("/reset-password/{token}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void resetPassword(@PathVariable String token, @RequestBody ResetPasswordRequestDto request) {
+    public UserDto resetPassword(@PathVariable String token, @RequestBody ResetPasswordRequestDto request,
+                                  HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         PasswordResetToken resetToken = findValidToken(token);
 
         if (request.getNewPassword() == null || request.getNewPassword().length() < MIN_PASSWORD_LENGTH) {
@@ -80,6 +94,18 @@ public class AuthController {
 
         // One-time use
         resetTokenRepo.delete(resetToken);
+
+        Authentication authentication = authenticationManager.authenticate(
+            UsernamePasswordAuthenticationToken.unauthenticated(user.getUsername(), request.getNewPassword())
+        );
+
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(authentication);
+        SecurityContextHolder.setContext(context);
+        securityContextRepository.saveContext(context, httpRequest, httpResponse);
+        rememberMeServices.loginSuccess(httpRequest, httpResponse, authentication);
+
+        return userMapper.toDto(user);
     }
 
     private PasswordResetToken findValidToken(String token) {
